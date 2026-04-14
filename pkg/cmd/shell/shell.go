@@ -114,12 +114,12 @@ func runShellCommand(t *terminal.Terminal, sstore ShellStore, workspaceNameOrID 
 
 	sshName := string(localIdentifier)
 
-	err = refreshRes.Await()
-	if err != nil {
-		return breverrors.WrapAndTrace(wrapSSHConfigRefreshError(err))
-	}
+	refreshErr := refreshRes.Await()
 	err = util.WaitForSSHToBeAvailable(sshName, s)
 	if err != nil {
+		if refreshErr != nil {
+			return breverrors.WrapAndTrace(wrapSSHConfigRefreshError(refreshErr))
+		}
 		return breverrors.WrapAndTrace(err)
 	}
 	// we don't care about the error here but should log with sentry
