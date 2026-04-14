@@ -120,12 +120,62 @@ func TestGetSSHConfig(t *testing.T) {
 	}
 }
 
+func TestGetSSHConfigDoesNotCreateFile(t *testing.T) {
+	fs := MakeMockFileStore()
+
+	home, err := fs.UserHomeDir()
+	if !assert.Nil(t, err) {
+		return
+	}
+	sshConfigPath, err := files.GetUserSSHConfigPath(home)
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	content, err := fs.GetUserSSHConfig()
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	assert.Equal(t, "", content)
+
+	exists, err := fs.FileExists(sshConfigPath)
+	if !assert.Nil(t, err) {
+		return
+	}
+	assert.False(t, exists)
+}
+
 func TestWriteSSHConfig(t *testing.T) {
 	fs := MakeMockFileStore()
 	err := fs.WriteUserSSHConfig(``)
 	if !assert.Nil(t, err) {
 		return
 	}
+}
+
+func TestWriteSSHConfigCreatesParentDir(t *testing.T) {
+	fs := MakeMockFileStore()
+
+	err := fs.WriteUserSSHConfig("Include \"/tmp/test\"\n")
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	home, err := fs.UserHomeDir()
+	if !assert.Nil(t, err) {
+		return
+	}
+	sshConfigPath, err := files.GetUserSSHConfigPath(home)
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	exists, err := fs.FileExists(sshConfigPath)
+	if !assert.Nil(t, err) {
+		return
+	}
+	assert.True(t, exists)
 }
 
 func TestCreateNewSSHConfigBackup(t *testing.T) {

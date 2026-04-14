@@ -27,17 +27,20 @@ func (f FileStore) GetUserSSHConfig() (string, error) {
 	if path == "" {
 		return "", errors.New("nil path when getting ssh config")
 	}
-	file, err := f.GetOrCreateFile(path)
+
+	exists, err := f.FileExists(path)
 	if err != nil {
 		return "", breverrors.WrapAndTrace(err)
+	}
+	if !exists {
+		return "", nil
 	}
 
-	buf := new(strings.Builder)
-	_, err = io.Copy(buf, file)
+	config, err := f.GetFileAsString(path)
 	if err != nil {
 		return "", breverrors.WrapAndTrace(err)
 	}
-	return buf.String(), nil
+	return config, nil
 }
 
 func (f FileStore) GetWSLUserSSHConfig() (string, error) {
@@ -52,17 +55,20 @@ func (f FileStore) GetWSLUserSSHConfig() (string, error) {
 	if path == "" {
 		return "", errors.New("nil path when getting ssh config")
 	}
-	file, err := f.GetOrCreateFile(path)
+
+	exists, err := f.FileExists(path)
 	if err != nil {
 		return "", breverrors.WrapAndTrace(err)
+	}
+	if !exists {
+		return "", nil
 	}
 
-	buf := new(strings.Builder)
-	_, err = io.Copy(buf, file)
+	config, err := f.GetFileAsString(path)
 	if err != nil {
 		return "", breverrors.WrapAndTrace(err)
 	}
-	return buf.String(), nil
+	return config, nil
 }
 
 func (f FileStore) GetUserSSHConfigPath() (string, error) {
@@ -125,6 +131,10 @@ func (f FileStore) WriteUserSSHConfig(config string) error {
 	if err != nil {
 		return breverrors.WrapAndTrace(err)
 	}
+	err = f.fs.MkdirAll(filepath.Dir(csp), 0o755)
+	if err != nil {
+		return breverrors.WrapAndTrace(err)
+	}
 	err = afero.WriteFile(f.fs, csp, []byte(config), 0o644)
 	if err != nil {
 		return breverrors.WrapAndTrace(err)
@@ -138,6 +148,10 @@ func (f FileStore) WriteWSLUserSSHConfig(config string) error {
 		return breverrors.WrapAndTrace(err)
 	}
 	csp, err := files.GetUserSSHConfigPath(home)
+	if err != nil {
+		return breverrors.WrapAndTrace(err)
+	}
+	err = f.fs.MkdirAll(filepath.Dir(csp), 0o755)
 	if err != nil {
 		return breverrors.WrapAndTrace(err)
 	}
